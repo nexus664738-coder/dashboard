@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard —  Revenus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa7c7;
+      --accent:#22c55e;
+      --accent-2:#3b82f6;
+      --glass: rgba(255,255,255,0.03);
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Arial;
+      background: linear-gradient(180deg,#071028 0%, #0d1530 100%);
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px;
+    }
+    .wrap{max-width:1180px;margin:0 auto;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent-2),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700;color:white;box-shadow:0 6px 20px rgba(34,197,94,0.12);}
+    h1{font-size:18px;margin:0}
+    p.sub{color:var(--muted);margin:0;font-size:13px}
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;}
+    .btn.primary{background:linear-gradient(90deg,var(--accent),#16a34a);color:white;box-shadow:0 6px 18px rgba(34,197,94,0.12);}
+    .grid{display:grid;grid-template-columns: 1fr 380px;gap:20px;}
+    .main{background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);}
+    .kpis{display:flex;gap:12px;margin-bottom:18px;}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.018), transparent);padding:14px;border-radius:10px;flex:1;border:1px solid rgba(255,255,255,0.03);}
+    .kpi-title{font-size:12px;color:var(--muted)}
+    .kpi-value{font-size:20px;font-weight:700;margin-top:6px}
+    .kpi-sub{font-size:12px;color:var(--muted);margin-top:6px}
+    .chart-wrap{background:transparent;padding:8px;border-radius:10px}
+    canvas{width:100% !important;height:280px !important}
+    .transactions{margin-top:18px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.03);}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;text-align:left;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.02)}
+    th{color:var(--muted);font-weight:600}
+    td.amount{font-weight:700}
+    aside{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);height:100%;}
+    .profile{display:flex;gap:12px;align-items:center;margin-bottom:12px;}
+    .avatar{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#a78bfa,#60a5fa);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;}
+    .progress{background:rgba(255,255,255,0.03);height:10px;border-radius:999px;overflow:hidden;margin-top:8px;}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));width:55%}
+    .small{font-size:13px;color:var(--muted)}
+    .toggle{display:flex;gap:8px;align-items:center;margin-top:12px;}
+    .flash{color:var(--accent);font-weight:700;}
+    footer{color:var(--muted);font-size:12px;margin-top:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr;} aside{order:2}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">DG</div>
+        <div>
+          <h1>Dashboard Demo</h1>
+          <p class="sub">Apparence de revenus — mockup / portfolio</p>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn">Exporter</button>
+        <button id="boostBtn" class="btn primary">Simuler + Revenus</button>
+      </div>
+    </header>
+    <div class="grid">
+      <main class="main">
+        <div class="kpis">
+          <div class="card">
+            <div class="kpi-title">Solde total</div>
+            <div id="balance" class="kpi-value">€ 12,450.00</div>
+            <div class="kpi-sub">+4.3% ce mois-ci</div>
+          </div>
+          <div class="card">
+            <div class="kpi-title">Gagné aujourd'hui</div>
+            <div id="today" class="kpi-value">€ 188.40</div>
+            <div class="kpi-sub">Transactions: <span id="txCount">7</span></div>
+          </div>
+          <div class="card">
+            <div class="kpi-title">Revenu mensuel</div>
+            <div id="monthly" class="kpi-value">€ 3,750</div>
+            <div class="kpi-sub">Objectif: €5,000</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="earnChart"></canvas>
+        </div>
+        <section class="transactions" aria-label="transactions">
+          <table>
+            <thead>
+              <tr><th>Heure</th><th>Source</th><th>Type</th><th class="amount">Montant</th></tr>
+            </thead>
+            <tbody id="txTable">
+              <tr><td>09:12</td><td>Vente A</td><td>Crédit</td><td class="amount">+ € 34.00</td></tr>
+              <tr><td>10:03</td><td>Affiliation</td><td>Crédit</td><td class="amount">+ € 12.50</td></tr>
+              <tr><td>11:22</td><td>Vente B</td><td>Crédit</td><td class="amount">+ € 64.00</td></tr>
+              <tr><td>12:10</td><td>Retrait</td><td>Débit</td><td class="amount" style="color:var(--danger)">- € 20.00</td></tr>
+              <tr><td>13:45</td><td>Vente C</td><td>Crédit</td><td class="amount">+ € 67.90</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+      <aside>
+        <div class="profile">
+          <div class="avatar">JS</div>
+          <div>
+            <div style="font-weight:700">Luca lefevre</div>
+            <div class="small">Compte Pro • Dernière connexion: aujourd'hui</div>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="small">Progression de l'objectif</div>
+          <div style="font-weight:700;font-size:20px;margin-top:6px">€ 3,750 / € 5,000</div>
+          <div class="progress"><i id="goalBar"></i></div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="small">Statut météo finance</div>
+          <div style="font-weight:700;margin-top:6px" id="statusText">Bonne tendance <span class="flash">• +4.3%</span></div>
+        </div>
+        <div class="toggle">
+          <label class="small">Mode démo</label>
+          <button id="fakeToggle" class="btn">Activer</button>
+        </div>
+        <footer><div></div></footer>
+      </aside>
+    </div>
+  </div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+
+  const ctx = document.getElementById('earnChart').getContext('2d');
+
+  function gradientFill(ctx){
+    const gradient = ctx.createLinearGradient(0,0,0,300);
+    gradient.addColorStop(0, 'rgba(59,130,246,0.18)');
+    gradient.addColorStop(1, 'rgba(34,197,94,0.03)');
+    return gradient;
+  }
+
+  let days = Array.from({length:14}, (_,i)=> {
+    const d = new Date();
+    d.setDate(d.getDate()-13+i);
+    return `${d.getDate()}/${d.getMonth()+1}`;
+  });
+
+  let values = [80,120,150,90,200,140,160,190,210,230,195,220,240,188];
+
+  const chart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: days,
+      datasets:[{
+        label:'Revenus journaliers (€)',
+        data: values,
+        borderColor: 'rgba(99,102,241,0.95)',
+        backgroundColor: gradientFill(ctx),
+        tension:0.25,
+        pointRadius:3,
+        pointBackgroundColor:'#fff',
+        pointBorderColor:'rgba(99,102,241,0.95)',
+        fill:true
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false}, ticks:{color:'#9aa7c7'}},
+        y:{ticks:{color:'#9aa7c7'}, grid:{color:'rgba(255,255,255,0.02)'}}
+      }
+    }
+  });
+
+  /* UI elements */
+  const balanceEl = document.getElementById('balance');
+  const todayEl = document.getElementById('today');
+  const monthlyEl = document.getElementById('monthly');
+  const txCountEl = document.getElementById('txCount');
+  const txTable = document.getElementById('txTable');
+  const goalBar = document.getElementById('goalBar');
+  const statusText = document.getElementById('statusText');
+
+  let state = {
+    balance: 12450.00,
+    today: 188.40,
+    monthly: 3750,
+    txCount: 7,
+    demoMode: false
+  };
+
+  function updateUI(){
+    balanceEl.textContent = '€ ' + state.balance.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+    todayEl.textContent = '€ ' + state.today.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+    monthlyEl.textContent = '€ ' + state.monthly.toLocaleString();
+    txCountEl.textContent = state.txCount;
+    const percent = Math.min(100, Math.round((state.monthly/5000)*100));
+    goalBar.style.width = percent + '%';
+    statusText.innerHTML = percent > 70 ? `Bonne tendance <span class="flash">• +${(Math.random()*6+1).toFixed(1)}%</span>` :
+                      `Stable <span style="color:#f59e0b">• +0.8%</span>`;
+  }
+
+  updateUI();
+
+  function pushTransaction(source, amount){
+    const tr = document.createElement('tr');
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const sign = amount >=0 ? '+' : '-';
+    const color = amount >=0 ? '' : ' style="color:var(--danger)"';
+    tr.innerHTML = `<td>${hh}:${mm}</td><td>${source}</td><td>${amount>=0?'Crédit':'Débit'}</td><td class="amount"${color}>${sign} € ${Math.abs(amount).toFixed(2)}</td>`;
+    txTable.prepend(tr);
+    state.txCount++;
+    state.today += amount;
+    state.balance += amount;
+    state.monthly += amount;
+    updateUI();
+  }
+
+  document.getElementById('boostBtn').addEventListener('click', () => {
+    const randomAmount = Math.floor(Math.random()*200)+10;
+    pushTransaction('Vente aléatoire', randomAmount);
+  });
+
+  document.getElementById('fakeToggle').addEventListener('click', (e)=>{
+    state.demoMode = !state.demoMode;
+    e.target.textContent = state.demoMode ? 'Désactiver' : 'Activer';
+    if(state.demoMode){
+      state.demoInterval = setInterval(()=>{
+        const randomAmount = Math.floor(Math.random()*200)+10;
+        pushTransaction('Vente automatique', randomAmount);
+      },2000);
+    } else {
+      clearInterval(state.demoInterval);
+    }
+  });
+
+});
+</script>
+
+</body>
+</html>
